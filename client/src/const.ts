@@ -1,17 +1,6 @@
-export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
-
-// Generate login URL at runtime so redirect URI reflects the current origin.
-export const getLoginUrl = () => {
-  const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
-  const appId = import.meta.env.VITE_APP_ID;
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
-
-  const url = new URL(`${oauthPortalUrl}/app-auth`);
-  url.searchParams.set("appId", appId);
-  url.searchParams.set("redirectUri", redirectUri);
-  url.searchParams.set("state", state);
-  url.searchParams.set("type", "signIn");
-
-  return url.toString();
-};
+// Design system: "Acero y Territorio" — direct industrial service site for Franz Wieler.
+export const WHATSAPP_NUMBER = "59163544951";
+export const WHATSAPP_CATALOG_URL = `https://wa.me/c/${WHATSAPP_NUMBER}`;
+export const WHATSAPP_QUOTE_MESSAGE =
+  "Hola Franz, me gustaría solicitar una cotización para un trabajo de techos.";
+export const WHATSAPP_QUOTE_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_QUOTE_MESSAGE)}`;
