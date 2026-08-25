@@ -17,10 +17,15 @@ import {
   X,
 } from "lucide-react";
 import {
+  DEFAULT_SITE_CONTENT,
+  type SiteContentMap,
+} from "@shared/siteContent";
+import {
   WHATSAPP_CATALOG_URL,
   WHATSAPP_NUMBER,
   WHATSAPP_QUOTE_URL,
 } from "@/const";
+import { trpc } from "@/lib/trpc";
 
 const ASSETS = {
   hero: "/manus-storage/faro-project-hero_8f711cbb.png",
@@ -72,19 +77,19 @@ const projects = [
     category: "Estructura en montaje",
     title: "Armazón de gran luz en montaje",
     description: "Columnas reticuladas, cerchas de gran luz y cubierta metálica en proceso de montaje.",
-    image: ASSETS.frame,
+    imageUrl: ASSETS.frame,
   },
   {
     category: "Galpón agrícola",
     title: "Cubierta para maquinaria",
     description: "Pórticos reticulados, laterales de calamina y altura libre para proteger equipos agrícolas.",
-    image: ASSETS.shed,
+    imageUrl: ASSETS.shed,
   },
   {
     category: "Montaje nocturno",
     title: "Montaje nocturno de cubierta",
     description: "Techo de doble pendiente, vigas reticuladas y apoyos metálicos instalados directamente en obra.",
-    image: ASSETS.hero,
+    imageUrl: ASSETS.hero,
   },
 ];
 
@@ -100,15 +105,17 @@ function CatalogLink({
   children,
   className = "",
   label,
+  href,
 }: {
   children: React.ReactNode;
   className?: string;
   label?: string;
+  href?: string;
 }) {
   return (
     <a
       className={className}
-      href={WHATSAPP_CATALOG_URL}
+      href={href ?? WHATSAPP_CATALOG_URL}
       target="_blank"
       rel="noreferrer"
       aria-label={label || "Abrir el catálogo de WhatsApp de Franz Wieler"}
@@ -121,6 +128,14 @@ function CatalogLink({
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const managedSite = trpc.site.public.useQuery();
+  const content: SiteContentMap = managedSite.data?.content ?? DEFAULT_SITE_CONTENT;
+  const galleryProjects = managedSite.data?.projects ?? projects;
+  const whatsappNumber = (content.whatsappNumber || WHATSAPP_NUMBER).replace(/\D/g, "");
+  const catalogUrl = `https://wa.me/c/${whatsappNumber}`;
+  const quoteMessage = "Hola Franz, me gustaría solicitar una cotización para un trabajo de techos.";
+  const quoteUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(quoteMessage)}`;
+  const telephoneUrl = `tel:+${whatsappNumber}`;
 
   useEffect(() => {
     const closeMenu = () => setMenuOpen(false);
@@ -141,7 +156,7 @@ export default function Home() {
     ].join("\n");
     setSubmitted(true);
     window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
+      `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -165,10 +180,10 @@ export default function Home() {
             ))}
           </nav>
           <div className="header-actions">
-            <CatalogLink className="catalog-header-link">
+            <CatalogLink className="catalog-header-link" href={catalogUrl}>
               Ver catálogo <ArrowUpRight size={15} strokeWidth={2.2} />
             </CatalogLink>
-            <a className="quote-header-link" href={WHATSAPP_QUOTE_URL} target="_blank" rel="noreferrer">
+            <a className="quote-header-link" href={quoteUrl} target="_blank" rel="noreferrer">
               Pedir cotización <ArrowUpRight size={15} strokeWidth={2.2} />
             </a>
             <button
@@ -193,7 +208,7 @@ export default function Home() {
               {label}
             </a>
           ))}
-          <CatalogLink className="mobile-catalog" label="Abrir catálogo de WhatsApp">
+          <CatalogLink className="mobile-catalog" href={catalogUrl} label="Abrir catálogo de WhatsApp">
             Ver catálogo por WhatsApp <ArrowUpRight size={17} />
           </CatalogLink>
         </nav>
@@ -208,30 +223,29 @@ export default function Home() {
           </div>
           <div className="hero-copy-wrap">
             <p className="eyebrow eyebrow-light">
-              <span /> CONSTRUCCIÓN Y MONTAJE · BOLIVIA
+              <span /> {content.heroBadge}
             </p>
             <h1 id="hero-title">
-              Techos que
+              {content.heroTitle}
               <br />
-              <em>responden.</em>
+              <em>{content.heroHighlight}</em>
             </h1>
             <p className="hero-description">
-              Soluciones duraderas en techado, estructuras metálicas y tinglados para proyectos residenciales,
-              agrícolas y comerciales.
+              {content.heroDescription}
             </p>
             <div className="hero-actions">
-              <a className="button button-safety" href={WHATSAPP_QUOTE_URL} target="_blank" rel="noreferrer">
+              <a className="button button-safety" href={quoteUrl} target="_blank" rel="noreferrer">
                 <MessageCircle size={18} />
                 Pedir cotización
                 <ArrowUpRight size={17} />
               </a>
-              <CatalogLink className="button button-outline-light">
+              <CatalogLink className="button button-outline-light" href={catalogUrl}>
                 Ver catálogo de trabajos <ArrowUpRight size={17} />
               </CatalogLink>
             </div>
             <div className="hero-contact-rail">
               <span>ATENCIÓN DIRECTA</span>
-              <a href="tel:+59163544951">+591 635 44951</a>
+              <a href={telephoneUrl}>{content.phoneNumber}</a>
             </div>
           </div>
           <div className="hero-image-wrap">
@@ -260,17 +274,14 @@ export default function Home() {
           <div className="intro-copy">
             <p className="eyebrow"><span /> SOBRE EL TRABAJO</p>
             <h2 id="intro-title">
-              Hecho para durar.
-              <br />
-              Hecho <em>de frente.</em>
+              {content.aboutTitle}
             </h2>
             <p>
-              Cada cubierta y cada estructura se resuelven con atención al uso real del espacio, el clima de Santa
-              Cruz y el ritmo de tu proyecto. Sin intermediarios: hablás directamente con Franz.
+              {content.aboutBody}
             </p>
             <div className="experience-note" aria-label="Tres años de experiencia">
               <strong>3</strong>
-              <p><span>AÑOS DE EXPERIENCIA</span>Construyendo techos y estructuras metálicas con trabajo directo en Pailón y Santa Cruz.</p>
+              <p><span>AÑOS DE EXPERIENCIA</span>{content.experienceText}</p>
             </div>
             <div className="intro-details">
               <div>
@@ -311,7 +322,7 @@ export default function Home() {
                 </div>
                 <h3>{title}</h3>
                 <p>{description}</p>
-                <CatalogLink className="text-link" label={`Ver catálogo para ${title}`}>
+                <CatalogLink className="text-link" href={catalogUrl} label={`Ver catálogo para ${title}`}>
                   Ver catálogo <ArrowUpRight size={16} />
                 </CatalogLink>
               </article>
@@ -365,14 +376,14 @@ export default function Home() {
                 en los <em>detalles.</em>
               </h2>
             </div>
-            <CatalogLink className="button button-dark">
+            <CatalogLink className="button button-dark" href={catalogUrl}>
               Ver catálogo en WhatsApp <ArrowUpRight size={17} />
             </CatalogLink>
           </div>
           <div className="project-grid">
-            {projects.map(({ category, title, description, image }, index) => (
+            {galleryProjects.map(({ category, title, description, imageUrl }, index) => (
               <CatalogLink className={`project-card project-card-${index + 1}`} key={title} label={`Abrir catálogo: ${title}`}>
-                <img src={image} alt={title} />
+                <img src={imageUrl} alt={title} />
                 <div className="project-overlay" />
                 <div className="project-meta">
                   <span>{category}</span>
@@ -398,9 +409,9 @@ export default function Home() {
           </div>
           <div className="coverage-copy">
             <p className="eyebrow eyebrow-light"><span /> ZONA DE TRABAJO</p>
-            <h2>Desde Pailón,<br />para Santa Cruz.</h2>
-            <p>Atención en Pailón, San José y zonas cercanas de Santa Cruz. Consultá por el alcance de tu proyecto.</p>
-            <div className="coverage-location"><MapPin size={18} /> PAILÓN · SANTA CRUZ · BOLIVIA</div>
+            <h2>{content.coverageTitle}</h2>
+            <p>{content.coverageBody}</p>
+            <div className="coverage-location"><MapPin size={18} /> {content.location.toUpperCase()}</div>
           </div>
         </section>
 
@@ -408,14 +419,12 @@ export default function Home() {
           <div className="contact-intro">
             <p className="eyebrow"><span /> CONTACTO</p>
             <h2 id="contact-title">
-              Contanos lo que
-              <br />
-              querés <em>construir.</em>
+              {content.contactTitle}
             </h2>
-            <p>Mandanos los datos básicos de tu proyecto. Al enviar, se abre WhatsApp con tu consulta lista para Franz.</p>
+            <p>{content.contactBody}</p>
             <div className="contact-details">
-              <a href="tel:+59163544951"><Phone size={17} /> +591 635 44951</a>
-              <a href={WHATSAPP_QUOTE_URL} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Escribir por WhatsApp</a>
+              <a href={telephoneUrl}><Phone size={17} /> {content.phoneNumber}</a>
+              <a href={quoteUrl} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Escribir por WhatsApp</a>
             </div>
           </div>
           <form className="quote-form" onSubmit={handleSubmit}>
@@ -449,17 +458,17 @@ export default function Home() {
       <footer className="site-footer">
         <div className="footer-main">
           <BrandMark />
-          <p>Techos, tinglados y estructuras metálicas resueltas con trabajo directo desde Pailón.</p>
-          <CatalogLink className="footer-catalog">Ver catálogo <ArrowUpRight size={16} /></CatalogLink>
+          <p>{content.footerDescription}</p>
+          <CatalogLink className="footer-catalog" href={catalogUrl}>Ver catálogo <ArrowUpRight size={16} /></CatalogLink>
         </div>
         <div className="footer-links">
           <div><span>RECORRIDO</span>{navItems.map(([label, href]) => <a href={href} key={href}>{label}</a>)}</div>
-          <div><span>CONTACTO</span><a href="tel:+59163544951">+591 635 44951</a><a href={WHATSAPP_QUOTE_URL} target="_blank" rel="noreferrer">WhatsApp directo</a><p>Pailón, Santa Cruz<br />Bolivia</p></div>
+          <div><span>CONTACTO</span><a href={telephoneUrl}>{content.phoneNumber}</a><a href={quoteUrl} target="_blank" rel="noreferrer">WhatsApp directo</a><p>{content.location}</p></div>
         </div>
         <div className="footer-bottom"><span>© {new Date().getFullYear()} FRANZ WIELER</span><span>CONSTRUCCIÓN DE TECHOS Y ESTRUCTURAS</span></div>
       </footer>
 
-      <CatalogLink className="floating-catalog" label="Abrir catálogo de WhatsApp de Franz Wieler">
+      <CatalogLink className="floating-catalog" href={catalogUrl} label="Abrir catálogo de WhatsApp de Faro Estructuras">
         <MessageCircle size={20} />
         <span>Catálogo</span>
       </CatalogLink>

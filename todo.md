@@ -3,13 +3,21 @@
 - [x] Prepare the supplied Faro Estructuras logo for crisp web display.
 - [x] Replace the existing site logo in the shared header and footer brand treatment.
 - [x] Verify the updated logo at desktop and mobile widths.
-- [ ] Save the revised project checkpoint.
+- [ ] Save a new checkpoint after the full-stack admin-editor implementation.
 - [x] Create web-ready crops of the three supplied construction photos.
 - [x] Replace the hero, introduction, and gallery imagery with the supplied project photos.
 - [x] Verify the updated project-photo layout at desktop and mobile widths.
-- [ ] Sync the local preview with the latest shared project version.
-- [ ] Refresh the preview after the newest shared-session update.
+- [x] Sync the local preview with the latest shared project version.
+- [x] Refresh the preview after the newest shared-session update.
 - [x] Tighten the visible crop of the Faro Estructuras logo.
 - [x] Rewrite project-image descriptions to identify structural construction details.
 - [x] Verify the refined logo and project descriptions.
 - [x] Add the business’s three years of experience to the trust content.
+- [x] Resolve the full-stack upgrade conflicts while preserving the public Faro Estructuras site.
+- [x] Create database tables and secure procedures for editable copy and project entries.
+- [x] Build the admin-only dashboard for client text and image management.
+- [x] Bind public website content and gallery data to the managed database records.
+- [x] Verify a real administrator save updates public database-backed content.
+- [x] Verify the admin project-image upload flow returns a stored public image URL.
+- [ ] Promote the client account to the administrator role after its first sign-in.
+- [x] Restart the preview after the latest shared-session update.
