@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_PROJECTS, DEFAULT_SITE_CONTENT, type SiteContentMap } from "@shared/siteContent";
-import { projects, siteContent } from "../../drizzle/schema";
+import { projects, siteContent, siteDrafts } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { storagePut } from "../storage";
 import { adminProcedure, publicProcedure, router } from "../_core/trpc";
@@ -24,6 +24,13 @@ const projectInput = z.object({
   sortOrder: z.number().int().min(0).max(1000),
 });
 
+const draftInput = z.object({
+  content: z.array(editableContentInput).min(1).max(30),
+  projects: z.array(projectInput).max(100),
+});
+
+type DraftSnapshot = z.infer<typeof draftInput>;
+
 async function requireDb() {
   const db = await getDb();
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Content database unavailable" });
@@ -40,102 +47,82 @@ async function ensureInitialSiteData() {
   }
 
   const [projectCount] = await db.select({ id: projects.id }).from(projects).limit(1);
-  if (!projectCount) {
-    await db.insert(projects).values(DEFAULT_PROJECTS.map(project => ({ ...project })));
-  }
+  if (!projectCount) await db.insert(projects).values(DEFAULT_PROJECTS.map(project => ({ ...project })));
   return db;
 }
 
-async function getSiteData(includeHidden: boolean) {
+async function getPublishedSiteData() {
   const db = await ensureInitialSiteData();
   const contentRows = await db.select().from(siteContent);
-  const projectRows = await db
-    .select()
-    .from(projects)
-    .where(includeHidden ? undefined : eq(projects.visible, true))
-    .orderBy(asc(projects.sortOrder), asc(projects.id));
-
+  const projectRows = await db.select().from(projects).where(eq(projects.visible, true)).orderBy(asc(projects.sortOrder), asc(projects.id));
   const content = { ...DEFAULT_SITE_CONTENT } as SiteContentMap;
   contentRows.forEach(row => {
-    if (row.contentKey in content) {
-      content[row.contentKey as keyof SiteContentMap] = row.value;
-    }
+    if (row.contentKey in content) content[row.contentKey as keyof SiteContentMap] = row.value;
   });
   return { content, projects: projectRows };
 }
 
+async function getAdminDraftData() {
+  const db = await ensureInitialSiteData();
+  const published = await getPublishedSiteData();
+  const allProjects = await db.select().from(projects).orderBy(asc(projects.sortOrder), asc(projects.id));
+  const [draftRow] = await db.select().from(siteDrafts).orderBy(asc(siteDrafts.id)).limit(1);
+  if (!draftRow) return { published: { ...published, projects: allProjects }, draft: null, draftUpdatedAt: null };
+
+  try {
+    const draft = draftInput.parse({ content: JSON.parse(draftRow.contentJson), projects: JSON.parse(draftRow.projectsJson) });
+    return { published: { ...published, projects: allProjects }, draft, draftUpdatedAt: draftRow.updatedAt };
+  } catch {
+    // A malformed draft must never break the live public page or lock the admin out.
+    return { published: { ...published, projects: allProjects }, draft: null, draftUpdatedAt: null };
+  }
+}
+
+async function saveDraftSnapshot(draft: DraftSnapshot, userId: number) {
+  const db = await ensureInitialSiteData();
+  const [existing] = await db.select({ id: siteDrafts.id }).from(siteDrafts).orderBy(asc(siteDrafts.id)).limit(1);
+  const values = { contentJson: JSON.stringify(draft.content), projectsJson: JSON.stringify(draft.projects), updatedBy: userId };
+  if (existing) await db.update(siteDrafts).set(values).where(eq(siteDrafts.id, existing.id));
+  else await db.insert(siteDrafts).values(values);
+}
+
 export const siteRouter = router({
-  public: publicProcedure.query(() => getSiteData(false)),
+  public: publicProcedure.query(() => getPublishedSiteData()),
   admin: router({
-    dashboard: adminProcedure.query(() => getSiteData(true)),
-    updateContent: adminProcedure
-      .input(z.object({ updates: z.array(editableContentInput).min(1).max(24) }))
-      .mutation(async ({ ctx, input }) => {
-        const db = await ensureInitialSiteData();
-        for (const update of input.updates) {
-          const existing = await db
-            .select({ id: siteContent.id })
-            .from(siteContent)
-            .where(eq(siteContent.contentKey, update.key))
-            .limit(1);
-          if (existing[0]) {
-            await db
-              .update(siteContent)
-              .set({ value: update.value, updatedBy: ctx.user.id })
-              .where(eq(siteContent.id, existing[0].id));
-          } else {
-            await db.insert(siteContent).values({
-              contentKey: update.key,
-              value: update.value,
-              updatedBy: ctx.user.id,
-            });
-          }
-        }
-        return { success: true } as const;
-      }),
-    saveProject: adminProcedure.input(projectInput).mutation(async ({ ctx, input }) => {
-      const db = await ensureInitialSiteData();
-      const values = { ...input, imageKey: input.imageKey ?? null, updatedBy: ctx.user.id };
-      if (input.id) {
-        await db.update(projects).set(values).where(eq(projects.id, input.id));
-        return { id: input.id };
-      }
-      const result = await db.insert(projects).values(values);
-      return { id: Number(result[0].insertId) };
+    dashboard: adminProcedure.query(() => getAdminDraftData()),
+    saveDraft: adminProcedure.input(draftInput).mutation(async ({ ctx, input }) => {
+      await saveDraftSnapshot(input, ctx.user.id);
+      return { success: true } as const;
     }),
-    deleteProject: adminProcedure
-      .input(z.object({ id: z.number().int().positive() }))
-      .mutation(async ({ input }) => {
-        const db = await ensureInitialSiteData();
-        await db.delete(projects).where(eq(projects.id, input.id));
-        return { success: true } as const;
-      }),
-    reorderProjects: adminProcedure
-      .input(z.object({ ids: z.array(z.number().int().positive()).min(1).max(100) }))
-      .mutation(async ({ ctx, input }) => {
-        const db = await ensureInitialSiteData();
-        for (let sortOrder = 0; sortOrder < input.ids.length; sortOrder += 1) {
-          const id = input.ids[sortOrder];
-          await db.update(projects).set({ sortOrder, updatedBy: ctx.user.id }).where(eq(projects.id, id));
+    discardDraft: adminProcedure.mutation(async () => {
+      const db = await ensureInitialSiteData();
+      await db.delete(siteDrafts);
+      return { success: true } as const;
+    }),
+    publishDraft: adminProcedure.mutation(async ({ ctx }) => {
+      const db = await ensureInitialSiteData();
+      const [draftRow] = await db.select().from(siteDrafts).orderBy(asc(siteDrafts.id)).limit(1);
+      if (!draftRow) throw new TRPCError({ code: "BAD_REQUEST", message: "No hay cambios en borrador para publicar." });
+      const draft = draftInput.parse({ content: JSON.parse(draftRow.contentJson), projects: JSON.parse(draftRow.projectsJson) });
+
+      await db.transaction(async tx => {
+        await tx.delete(siteContent);
+        await tx.insert(siteContent).values(draft.content.map(entry => ({ contentKey: entry.key, value: entry.value, updatedBy: ctx.user.id })));
+        await tx.delete(projects);
+        if (draft.projects.length) {
+          await tx.insert(projects).values(draft.projects.map(({ id: _id, ...project }) => ({ ...project, imageKey: project.imageKey ?? null, updatedBy: ctx.user.id })));
         }
-        return { success: true } as const;
-      }),
+        await tx.delete(siteDrafts);
+      });
+      return { success: true } as const;
+    }),
     uploadImage: adminProcedure
-      .input(
-        z.object({
-          fileName: z.string().min(1).max(180),
-          mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-          base64: z.string().min(20).max(12_000_000),
-        }),
-      )
+      .input(z.object({ fileName: z.string().min(1).max(180), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), base64: z.string().min(20).max(12_000_000) }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.base64, "base64");
-        if (buffer.byteLength > 8 * 1024 * 1024) {
-          throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "La imagen debe pesar menos de 8 MB." });
-        }
+        if (buffer.byteLength > 8 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "La imagen debe pesar menos de 8 MB." });
         const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
-        const uploaded = await storagePut(`projects/${ctx.user.id}/${Date.now()}-${safeFileName}`, buffer, input.mimeType);
-        return uploaded;
+        return storagePut(`projects/${ctx.user.id}/${Date.now()}-${safeFileName}`, buffer, input.mimeType);
       }),
   }),
 });

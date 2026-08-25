@@ -50,5 +50,15 @@ export const projects = mysqlTable("projects", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
+/** A single server-side draft snapshot keeps unpublished copy and gallery changes off the live site. */
+export const siteDrafts = mysqlTable("site_drafts", {
+  id: int("id").autoincrement().primaryKey(),
+  contentJson: text("content_json").notNull(),
+  projectsJson: text("projects_json").notNull(),
+  updatedBy: int("updated_by").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
 export type SiteContent = typeof siteContent.$inferSelect;
 export type Project = typeof projects.$inferSelect;
+export type SiteDraft = typeof siteDrafts.$inferSelect;

@@ -14,6 +14,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/admin"} component={AdminPage} />
       <Route path={"/admin/proyectos"} component={AdminPage} />
+      <Route path={"/admin/vista-previa"} component={AdminPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

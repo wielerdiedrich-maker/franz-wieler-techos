@@ -18,7 +18,7 @@ describe("site admin editor security", () => {
       ...baseContext,
       user: { id: 7, role: "user", openId: "client-user" },
     } as any);
-    await expect(caller.admin.updateContent({ updates: [{ key: "heroTitle", value: "Cambio no permitido" }] })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.admin.saveDraft({ content: [{ key: "heroTitle", value: "Cambio no permitido" }], projects: [] })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 

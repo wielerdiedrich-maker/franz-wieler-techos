@@ -21,7 +21,14 @@
 - [x] Verify the admin project-image upload flow returns a stored public image URL.
 - [ ] Promote the client account to the administrator role after its first sign-in.
 - [x] Restart the preview after the latest shared-session update.
-- [ ] Restart the preview after the current shared-session update.
+- [x] Restart the preview after the current shared-session update.
 - [x] Add a dedicated image upload and replace action to each existing admin project card.
 - [x] Show upload guidance, progress, preview, and an explicit save state for replaced project images.
 - [x] Verify the refined image-replacement workflow on desktop and mobile.
+- [x] Restore a clearly visible sign-in action for unauthenticated admin visitors.
+- [x] Add draft and published states for editable text and project-gallery changes.
+- [x] Add an in-admin preview of draft changes before publication.
+- [x] Add explicit publish controls that move reviewed drafts to the public website.
+- [x] Verify the unauthenticated admin access screen presents a visible sign-in control.
+- [x] Verify a saved draft can be reviewed and explicitly published without exposing drafts on the public site.
+- [x] Add a visible client-access link on the public website that opens the admin sign-in page.
