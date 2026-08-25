@@ -2,23 +2,17 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_SITE_CONTENT } from "@shared/siteContent";
 import { siteRouter } from "./site";
 
-const baseContext = {
-  req: {} as any,
-  res: {} as any,
-};
+const baseContext = { req: { headers: {} } as any, res: {} as any };
 
-describe("site admin editor security", () => {
-  it("denies dashboard access to visitors who are not signed in", async () => {
+describe("site client portal security", () => {
+  it("denies dashboard access when no dedicated client session is present", async () => {
     const caller = siteRouter.createCaller({ ...baseContext, user: null } as any);
-    await expect(caller.admin.dashboard()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.admin.dashboard()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
-  it("denies write access to authenticated users without the admin role", async () => {
-    const caller = siteRouter.createCaller({
-      ...baseContext,
-      user: { id: 7, role: "user", openId: "client-user" },
-    } as any);
-    await expect(caller.admin.saveDraft({ content: [{ key: "heroTitle", value: "Cambio no permitido" }], projects: [] })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  it("denies draft writes when no dedicated client session is present", async () => {
+    const caller = siteRouter.createCaller({ ...baseContext, user: null } as any);
+    await expect(caller.admin.saveDraft({ content: [{ key: "heroTitle", value: "Cambio no permitido" }], projects: [] })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });
 

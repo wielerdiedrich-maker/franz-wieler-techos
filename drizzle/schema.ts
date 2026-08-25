@@ -59,6 +59,17 @@ export const siteDrafts = mysqlTable("site_drafts", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
+/** The client's independent portal account; its password is stored only as a salted hash. */
+export const clientAdminAccounts = mysqlTable("client_admin_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordSalt: varchar("password_salt", { length: 128 }).notNull(),
+  passwordHash: varchar("password_hash", { length: 256 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
 export type SiteContent = typeof siteContent.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type SiteDraft = typeof siteDrafts.$inferSelect;
+export type ClientAdminAccount = typeof clientAdminAccounts.$inferSelect;

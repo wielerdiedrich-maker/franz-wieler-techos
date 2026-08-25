@@ -1,10 +1,7 @@
-// Admin-only editor: drafts are persisted separately and require an explicit publish action.
-import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+// Client-only editor: drafts are persisted separately and require an explicit publish action.
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowDown,
@@ -14,16 +11,17 @@ import {
   Eye,
   FileImage,
   ImagePlus,
+  LayoutDashboard,
   Loader2,
+  LogOut,
   Plus,
   Save,
   Send,
   ShieldAlert,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 
 type ContentState = Record<string, string>;
 type ProjectDraft = {
@@ -78,18 +76,36 @@ function readFileAsBase64(file: File) {
   });
 }
 
-function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
+function ClientPortalShell({ children, email, onLogout }: { children: React.ReactNode; email: string; onLogout: () => void }) {
+  const [location, setLocation] = useLocation();
+  const items = [
+    { label: "Resumen", path: "/admin", Icon: LayoutDashboard },
+    { label: "Proyectos", path: "/admin/proyectos", Icon: ImagePlus },
+    { label: "Vista previa", path: "/admin/vista-previa", Icon: Eye },
+  ];
+  return <div className="min-h-screen bg-[#f7f3ea] text-slate-950"><header className="sticky top-0 z-30 border-b border-slate-200 bg-[#f7f3ea]/95 backdrop-blur"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3"><a href="/" className="text-sm font-black tracking-tight">FARO <span className="text-orange-600">ESTRUCTURAS</span></a><nav className="flex flex-wrap items-center gap-1" aria-label="Navegación del portal">{items.map(item => <Button key={item.path} variant={location === item.path ? "default" : "ghost"} size="sm" className={location === item.path ? "bg-slate-950 hover:bg-slate-800" : ""} onClick={() => setLocation(item.path)}><item.Icon className="mr-1.5 h-4 w-4" />{item.label}</Button>)}</nav><div className="flex items-center gap-2"><span className="hidden max-w-44 truncate text-xs text-slate-500 sm:block">{email}</span><Button variant="outline" size="sm" onClick={onLogout}><LogOut className="mr-1.5 h-4 w-4" />Salir</Button></div></div></header><main className="px-4 py-6">{children}</main></div>;
+}
 
-  if (loading) return <div className="grid min-h-screen place-items-center bg-slate-950"><Loader2 className="animate-spin text-orange-400" /></div>;
-  if (!user) {
-    return <div className="grid min-h-screen place-items-center bg-slate-950 p-6 text-center text-white"><div className="max-w-md space-y-5 rounded-2xl border border-white/15 bg-white/5 p-8"><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-orange-500/15 text-orange-300"><ShieldAlert /></span><h1 className="text-2xl font-semibold">Acceso de administración</h1><p className="text-sm leading-6 text-slate-300">Ingresá con la cuenta autorizada para editar textos, fotos y borradores de Faro Estructuras.</p><Button onClick={startLogin} className="w-full bg-orange-500 hover:bg-orange-600">Iniciar sesión</Button><Link href="/" className="block text-sm text-slate-300 underline underline-offset-4">Volver al sitio público</Link></div></div>;
+function ClientPortalGate({ children }: { children: React.ReactNode }) {
+  const utils = trpc.useUtils();
+  const auth = trpc.clientAuth.me.useQuery();
+  const login = trpc.clientAuth.login.useMutation({ onSuccess: () => utils.clientAuth.me.invalidate() });
+  const logout = trpc.clientAuth.logout.useMutation({ onSuccess: () => { utils.clientAuth.me.invalidate(); } });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  if (auth.isLoading) return <div className="grid min-h-screen place-items-center bg-slate-950"><Loader2 className="animate-spin text-orange-400" /></div>;
+  if (!auth.data?.authenticated) {
+    const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setError("");
+      try { await login.mutateAsync({ email, password }); setPassword(""); }
+      catch { setError("Correo o contraseña incorrectos. Intentá nuevamente."); }
+    };
+    return <div className="grid min-h-screen place-items-center bg-slate-950 p-6 text-center text-white"><form onSubmit={submit} className="w-full max-w-md space-y-5 rounded-2xl border border-white/15 bg-white/5 p-8"><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-orange-500/15 text-orange-300"><ShieldAlert /></span><div><h1 className="text-2xl font-semibold">Acceso cliente</h1><p className="mt-2 text-sm leading-6 text-slate-300">Ingresá con el correo y la contraseña entregados para administrar el sitio de Faro Estructuras.</p></div><label className="grid gap-2 text-left text-sm font-medium">Correo electrónico<Input required type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} className="bg-white text-slate-950" /></label><label className="grid gap-2 text-left text-sm font-medium">Contraseña<Input required type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} className="bg-white text-slate-950" /></label>{error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</p>}<Button type="submit" disabled={login.isPending} className="w-full bg-orange-500 hover:bg-orange-600">{login.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Iniciar sesión</Button><a href="/" className="block text-sm text-slate-300 underline underline-offset-4">Volver al sitio público</a></form></div>;
   }
-  if (user.role !== "admin") {
-    const switchAccount = async () => { await logout(); startLogin(); };
-    return <div className="grid min-h-screen place-items-center bg-slate-950 p-6 text-center text-white"><div className="max-w-md space-y-5 rounded-2xl border border-white/15 bg-white/5 p-8"><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-red-500/15 text-red-300"><ShieldAlert /></span><h1 className="text-2xl font-semibold">Cuenta sin permisos</h1><p className="text-sm leading-6 text-slate-300">Esta cuenta inició sesión, pero todavía no tiene permisos de edición. Pedile al propietario que la autorice o ingresá con otra cuenta.</p><div className="grid gap-3"><Button onClick={switchAccount} className="bg-orange-500 hover:bg-orange-600">Cambiar cuenta / iniciar sesión</Button><Button variant="outline" onClick={logout}>Cerrar sesión</Button></div><Link href="/" className="block text-sm text-slate-300 underline underline-offset-4">Ver sitio público</Link></div></div>;
-  }
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return <ClientPortalShell email={auth.data.email || ""} onLogout={() => logout.mutate()}>{children}</ClientPortalShell>;
 }
 
 function ContentEditor({ content, onChange }: { content: ContentState; onChange: (key: string, value: string) => void }) {
@@ -170,4 +186,4 @@ function AdminWorkspace() {
   return <div className="mx-auto max-w-6xl space-y-7 py-2"><header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">Administración privada</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Editor de Faro Estructuras</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Guardá cambios como borrador, revisalos y publicalos solo cuando estén listos.</p></div><a className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 underline underline-offset-4" href="/" target="_blank" rel="noreferrer">Ver sitio publicado</a></header>{status && <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4" />{status}</div>}{isPreviewRoute ? <PreviewPanel content={previewContent} projects={previewProjects} onEdit={() => setLocation("/admin")} onPublish={publish} publishing={publishDraftMutation.isPending} /> : isProjectsRoute ? <><ProjectEditor projects={projects} setProjects={setProjects} />{actionBar}</> : <div className="space-y-7"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold text-slate-950">Información de negocio</h2><p className="mt-1 text-sm text-slate-600">Estos datos quedarán en el borrador hasta que los publiques.</p><div className="mt-5 grid gap-4 md:grid-cols-3">{businessFields.map(field => <label key={field.key} className="grid gap-2"><span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{field.label}</span><Input value={content[field.key] ?? ""} placeholder={field.placeholder} onChange={event => setContent({ ...content, [field.key]: event.target.value })} /></label>)}</div></section><section><div className="mb-4"><h2 className="text-lg font-bold text-slate-950">Textos del sitio</h2><p className="mt-1 text-sm text-slate-600">Editá con tranquilidad: primero guardás un borrador y luego lo revisás antes de publicar.</p></div><ContentEditor content={content} onChange={(key, value) => setContent({ ...content, [key]: value })} /></section>{actionBar}</div>}</div>;
 }
 
-export default function AdminPage() { return <AdminGuard><AdminWorkspace /></AdminGuard>; }
+export default function AdminPage() { return <ClientPortalGate><AdminWorkspace /></ClientPortalGate>; }

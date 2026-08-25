@@ -15,6 +15,13 @@
       "when": 1787624956045,
       "tag": "0001_parched_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787651813693,
+      "tag": "0002_gray_skrulls",
+      "breakpoints": true
     }
   ]
 }

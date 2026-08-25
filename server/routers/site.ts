@@ -5,7 +5,8 @@ import { DEFAULT_PROJECTS, DEFAULT_SITE_CONTENT, type SiteContentMap } from "@sh
 import { projects, siteContent, siteDrafts } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { storagePut } from "../storage";
-import { adminProcedure, publicProcedure, router } from "../_core/trpc";
+import { publicProcedure, router } from "../_core/trpc";
+import { clientAdminProcedure } from "../clientAdminProcedure";
 
 const editableContentInput = z.object({
   key: z.string().min(1).max(64),
@@ -89,17 +90,17 @@ async function saveDraftSnapshot(draft: DraftSnapshot, userId: number) {
 export const siteRouter = router({
   public: publicProcedure.query(() => getPublishedSiteData()),
   admin: router({
-    dashboard: adminProcedure.query(() => getAdminDraftData()),
-    saveDraft: adminProcedure.input(draftInput).mutation(async ({ ctx, input }) => {
-      await saveDraftSnapshot(input, ctx.user.id);
+    dashboard: clientAdminProcedure.query(() => getAdminDraftData()),
+    saveDraft: clientAdminProcedure.input(draftInput).mutation(async ({ ctx, input }) => {
+      await saveDraftSnapshot(input, ctx.clientAdmin.id);
       return { success: true } as const;
     }),
-    discardDraft: adminProcedure.mutation(async () => {
+    discardDraft: clientAdminProcedure.mutation(async () => {
       const db = await ensureInitialSiteData();
       await db.delete(siteDrafts);
       return { success: true } as const;
     }),
-    publishDraft: adminProcedure.mutation(async ({ ctx }) => {
+    publishDraft: clientAdminProcedure.mutation(async ({ ctx }) => {
       const db = await ensureInitialSiteData();
       const [draftRow] = await db.select().from(siteDrafts).orderBy(asc(siteDrafts.id)).limit(1);
       if (!draftRow) throw new TRPCError({ code: "BAD_REQUEST", message: "No hay cambios en borrador para publicar." });
@@ -107,22 +108,22 @@ export const siteRouter = router({
 
       await db.transaction(async tx => {
         await tx.delete(siteContent);
-        await tx.insert(siteContent).values(draft.content.map(entry => ({ contentKey: entry.key, value: entry.value, updatedBy: ctx.user.id })));
+        await tx.insert(siteContent).values(draft.content.map(entry => ({ contentKey: entry.key, value: entry.value, updatedBy: ctx.clientAdmin.id })));
         await tx.delete(projects);
         if (draft.projects.length) {
-          await tx.insert(projects).values(draft.projects.map(({ id: _id, ...project }) => ({ ...project, imageKey: project.imageKey ?? null, updatedBy: ctx.user.id })));
+          await tx.insert(projects).values(draft.projects.map(({ id: _id, ...project }) => ({ ...project, imageKey: project.imageKey ?? null, updatedBy: ctx.clientAdmin.id })));
         }
         await tx.delete(siteDrafts);
       });
       return { success: true } as const;
     }),
-    uploadImage: adminProcedure
+    uploadImage: clientAdminProcedure
       .input(z.object({ fileName: z.string().min(1).max(180), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), base64: z.string().min(20).max(12_000_000) }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.base64, "base64");
         if (buffer.byteLength > 8 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "La imagen debe pesar menos de 8 MB." });
         const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
-        return storagePut(`projects/${ctx.user.id}/${Date.now()}-${safeFileName}`, buffer, input.mimeType);
+        return storagePut(`projects/${ctx.clientAdmin.id}/${Date.now()}-${safeFileName}`, buffer, input.mimeType);
       }),
   }),
 });

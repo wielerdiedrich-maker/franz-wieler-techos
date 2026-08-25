@@ -3,7 +3,7 @@
 - [x] Prepare the supplied Faro Estructuras logo for crisp web display.
 - [x] Replace the existing site logo in the shared header and footer brand treatment.
 - [x] Verify the updated logo at desktop and mobile widths.
-- [ ] Save a new checkpoint after the full-stack admin-editor implementation.
+- [x] Save a new checkpoint after the full-stack admin-editor implementation.
 - [x] Create web-ready crops of the three supplied construction photos.
 - [x] Replace the hero, introduction, and gallery imagery with the supplied project photos.
 - [x] Verify the updated project-photo layout at desktop and mobile widths.
@@ -19,7 +19,7 @@
 - [x] Bind public website content and gallery data to the managed database records.
 - [x] Verify a real administrator save updates public database-backed content.
 - [x] Verify the admin project-image upload flow returns a stored public image URL.
-- [ ] Promote the client account to the administrator role after its first sign-in.
+- [x] Replace the pending Manus-account role promotion with the dedicated client-admin login.
 - [x] Restart the preview after the latest shared-session update.
 - [x] Restart the preview after the current shared-session update.
 - [x] Add a dedicated image upload and replace action to each existing admin project card.
@@ -32,3 +32,10 @@
 - [x] Verify the unauthenticated admin access screen presents a visible sign-in control.
 - [x] Verify a saved draft can be reviewed and explicitly published without exposing drafts on the public site.
 - [x] Add a visible client-access link on the public website that opens the admin sign-in page.
+- [x] Restart the preview after the latest shared-session synchronization.
+- [x] Configure the initial dedicated client-admin email and password securely.
+- [x] Replace Manus OAuth administration with secure password-based client sessions.
+- [x] Update the admin portal to use the dedicated client sign-in and logout flow.
+- [x] Verify the client login, draft, preview, publish, and logout experience.
+- [x] Verify an authenticated client session loads the protected portal and expires cleanly at logout.
+- [x] Verify the dedicated client session can save a draft, preview it, publish it, and expose changes publicly only after publishing.
