@@ -61,3 +61,5 @@
 - [x] Verify a client can add, save, preview, publish, and discard a new project without changing existing projects.
 - [x] Add a success toast notification when the Add Project control creates a new project card.
 - [x] Verify the new-project success toast and preserve the draft workflow.
+- [x] Make the mobile Add Project interaction scroll and focus the newly created card so it is immediately visible.
+- [x] Verify the mobile Add Project interaction adds a card, reveals it, and preserves the draft workflow.
