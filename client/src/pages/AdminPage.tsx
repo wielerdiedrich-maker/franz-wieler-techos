@@ -124,7 +124,7 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
     try {
       const uploaded = await uploadImage.mutateAsync({ fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64: await readFileAsBase64(file) });
       updateProject(index, { imageUrl: uploaded.url, imageKey: uploaded.key });
-      setImageMessages(current => ({ ...current, [index]: `“${file.name}” está lista. Guardá el borrador para incluirla en la vista previa.` }));
+      setImageMessages(current => ({ ...current, [index]: `“${file.name}” se guardó en Firebase. Guardá el borrador para incluirla en la vista previa.` }));
     } catch { setImageMessages(current => ({ ...current, [index]: "No se pudo subir la imagen. Probá nuevamente." })); }
     finally { setBusyIndex(null); }
   };

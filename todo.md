@@ -46,3 +46,13 @@
 - [x] Reset the client-admin portal to the confirmed Faro Estructuras email and password.
 - [x] Verify the confirmed credentials through the public `/admin` browser form and load the protected portal.
 - [x] Verify browser logout returns the client portal to the standalone sign-in form.
+- [ ] Configure transactional email delivery for password-recovery messages.
+- [ ] Create hashed, time-limited password-reset tokens and secure reset endpoints.
+- [ ] Add the recovery request and new-password screens to the client portal.
+- [ ] Verify recovery email delivery, reset-token validation, and login with the new password.
+- [x] Configure and validate the Firebase service-account credentials and Storage bucket.
+- [x] Replace the current admin project-image upload procedure with secure Firebase Storage uploads.
+- [x] Persist Firebase download URLs in gallery drafts and publish them to the public gallery.
+- [x] Verify Firebase image upload, draft preview, publishing, and public image rendering.
+- [x] Discover the project’s active Cloud Storage bucket and reconcile the Firebase Storage configuration.
+- [x] Confirm the exact configured bucket appears in the project’s active Cloud Storage bucket list.

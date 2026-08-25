@@ -4,7 +4,7 @@ import { z } from "zod";
 import { DEFAULT_PROJECTS, DEFAULT_SITE_CONTENT, type SiteContentMap } from "@shared/siteContent";
 import { projects, siteContent, siteDrafts } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { storagePut } from "../storage";
+import { uploadProjectImageToFirebase } from "../firebaseStorage";
 import { publicProcedure, router } from "../_core/trpc";
 import { clientAdminProcedure } from "../clientAdminProcedure";
 
@@ -123,7 +123,12 @@ export const siteRouter = router({
         const buffer = Buffer.from(input.base64, "base64");
         if (buffer.byteLength > 8 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "La imagen debe pesar menos de 8 MB." });
         const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
-        return storagePut(`projects/${ctx.clientAdmin.id}/${Date.now()}-${safeFileName}`, buffer, input.mimeType);
+        return uploadProjectImageToFirebase({
+          ownerId: ctx.clientAdmin.id,
+          fileName: safeFileName,
+          mimeType: input.mimeType,
+          data: buffer,
+        });
       }),
   }),
 });
