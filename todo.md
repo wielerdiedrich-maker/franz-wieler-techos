@@ -8,6 +8,8 @@
 - [x] Replace the hero, introduction, and gallery imagery with the supplied project photos.
 - [x] Verify the updated project-photo layout at desktop and mobile widths.
 - [ ] Sync the local preview with the latest shared project version.
+- [ ] Refresh the preview after the newest shared-session update.
 - [x] Tighten the visible crop of the Faro Estructuras logo.
 - [x] Rewrite project-image descriptions to identify structural construction details.
 - [x] Verify the refined logo and project descriptions.
+- [x] Add the business’s three years of experience to the trust content.

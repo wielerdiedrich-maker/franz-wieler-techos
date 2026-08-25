@@ -268,6 +268,10 @@ export default function Home() {
               Cada cubierta y cada estructura se resuelven con atención al uso real del espacio, el clima de Santa
               Cruz y el ritmo de tu proyecto. Sin intermediarios: hablás directamente con Franz.
             </p>
+            <div className="experience-note" aria-label="Tres años de experiencia">
+              <strong>3</strong>
+              <p><span>AÑOS DE EXPERIENCIA</span>Construyendo techos y estructuras metálicas con trabajo directo en Pailón y Santa Cruz.</p>
+            </div>
             <div className="intro-details">
               <div>
                 <span className="detail-number">01</span>
