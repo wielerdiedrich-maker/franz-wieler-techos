@@ -23,11 +23,10 @@ import {
 } from "@/const";
 
 const ASSETS = {
-  hero: "/manus-storage/franz-wieler-hero_b8fb975f.jpg",
-  roof: "/manus-storage/franz-wieler-gallery-roof_6a50c400.jpg",
-  structure: "/manus-storage/franz-wieler-gallery-structure_286a20d6.jpg",
-  welding: "/manus-storage/franz-wieler-gallery-welding_86a30032.jpg",
-  mark: "/manus-storage/franz-wieler-mark_b656bcd3.png",
+  hero: "/manus-storage/faro-project-hero_8f711cbb.png",
+  shed: "/manus-storage/faro-project-shed_e9262caa.png",
+  frame: "/manus-storage/faro-project-frame_d0ca8186.png",
+  mark: "/manus-storage/faro-estructuras-original_d7cd9a8c.jpg",
 };
 
 const navItems = [
@@ -70,32 +69,26 @@ const services = [
 
 const projects = [
   {
-    category: "Cubierta terminada",
-    title: "Techos para obra productiva",
-    image: ASSETS.roof,
+    category: "Estructura en montaje",
+    title: "Tinglado de gran luz",
+    image: ASSETS.frame,
   },
   {
-    category: "Estructura metálica",
-    title: "Tinglados de gran luz",
-    image: ASSETS.structure,
+    category: "Galpón agrícola",
+    title: "Cubierta para maquinaria",
+    image: ASSETS.shed,
   },
   {
-    category: "Trabajo de taller",
-    title: "Uniones hechas con precisión",
-    image: ASSETS.welding,
+    category: "Montaje nocturno",
+    title: "Estructura lista para avanzar",
+    image: ASSETS.hero,
   },
 ];
 
-function BrandMark({ compact = false }: { compact?: boolean }) {
+function BrandMark() {
   return (
-    <a className="brand-mark" href="#inicio" aria-label="Franz Wieler, inicio">
-      <img src={ASSETS.mark} alt="Símbolo de Franz Wieler" />
-      {!compact && (
-        <span className="brand-copy">
-          <strong>FRANZ WIELER</strong>
-          <span>TECHOS Y ESTRUCTURAS</span>
-        </span>
-      )}
+    <a className="brand-mark" href="#inicio" aria-label="Faro Estructuras, inicio">
+      <img src={ASSETS.mark} alt="Faro Estructuras — Ingeniería y Fabricación" />
     </a>
   );
 }
@@ -242,7 +235,7 @@ export default function Home() {
             <img
               className="hero-image"
               src={ASSETS.hero}
-              alt="Estructura de techo metálico en construcción"
+              alt="Tinglado metálico de gran luz durante un montaje nocturno"
             />
             <div className="hero-image-grid" aria-hidden="true" />
             <div className="hero-image-note">
@@ -258,7 +251,7 @@ export default function Home() {
 
         <section className="intro-section" id="nosotros" aria-labelledby="intro-title">
           <div className="intro-photo-card">
-            <img src={ASSETS.structure} alt="Tinglado de estructura metálica construido para una zona productiva" />
+            <img src={ASSETS.shed} alt="Galpón agrícola terminado para proteger maquinaria" />
             <div className="photo-corner-label">ESTRUCTURA · 02</div>
           </div>
           <div className="intro-copy">
