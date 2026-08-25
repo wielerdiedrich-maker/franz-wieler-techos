@@ -18,7 +18,8 @@ try {
 
   const before = await page.locator("article").count();
   await page.getByRole("button", { name: "Agregar proyecto" }).click();
-  await page.getByText("Nuevo proyecto agregado. Completá los datos y subí una imagen antes de publicarlo.", { exact: true }).waitFor({ timeout: 15_000 });
+  await page.getByText("Proyecto agregado", { exact: true }).waitFor({ timeout: 15_000 });
+  await page.getByText("Completá los datos y subí una imagen antes de publicarlo.", { exact: true }).waitFor({ timeout: 15_000 });
   const after = await page.locator("article").count();
   if (after !== before + 1) throw new Error(`Expected one new project card; found ${before} before and ${after} after.`);
 

@@ -59,3 +59,5 @@
 - [x] Diagnose why the client portal’s “Agregar proyecto” control does not add a usable project card.
 - [x] Fix the Add Project control and preserve the draft → preview → publish workflow.
 - [x] Verify a client can add, save, preview, publish, and discard a new project without changing existing projects.
+- [x] Add a success toast notification when the Add Project control creates a new project card.
+- [x] Verify the new-project success toast and preserve the draft workflow.
