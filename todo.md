@@ -21,3 +21,7 @@
 - [x] Verify the admin project-image upload flow returns a stored public image URL.
 - [ ] Promote the client account to the administrator role after its first sign-in.
 - [x] Restart the preview after the latest shared-session update.
+- [ ] Restart the preview after the current shared-session update.
+- [x] Add a dedicated image upload and replace action to each existing admin project card.
+- [x] Show upload guidance, progress, preview, and an explicit save state for replaced project images.
+- [x] Verify the refined image-replacement workflow on desktop and mobile.

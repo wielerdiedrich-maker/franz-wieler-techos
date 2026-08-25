@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ExternalLink,
   FileImage,
+  ImagePlus,
   Loader2,
   LogOut,
   Plus,
@@ -134,13 +135,13 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
   const reorderProjects = trpc.site.admin.reorderProjects.useMutation({ onSuccess: () => utils.site.admin.dashboard.invalidate() });
   const uploadImage = trpc.site.admin.uploadImage.useMutation();
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
+  const [imageMessages, setImageMessages] = useState<Record<number, string>>({});
 
   const updateProject = (index: number, patch: Partial<ProjectDraft>) => {
     setProjects(projects.map((project, current) => current === index ? { ...project, ...patch } : project));
   };
 
-  const uploadProjectImage = async (index: number, event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const uploadProjectImage = async (index: number, file?: File) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024) {
       alert("Subí una imagen JPG, PNG o WEBP de hasta 8 MB.");
@@ -150,6 +151,9 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
     try {
       const uploaded = await uploadImage.mutateAsync({ fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64: await readFileAsBase64(file) });
       updateProject(index, { imageUrl: uploaded.url, imageKey: uploaded.key });
+      setImageMessages(current => ({ ...current, [index]: `“${file.name}” está lista. Hacé clic en “Guardar proyecto” para publicarla.` }));
+    } catch {
+      setImageMessages(current => ({ ...current, [index]: "No se pudo subir la imagen. Probá nuevamente con otro archivo." }));
     } finally {
       setBusyIndex(null);
     }
@@ -160,7 +164,9 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
     if (!project.imageUrl) return alert("Agregá una imagen antes de guardar el proyecto.");
     setBusyIndex(index);
     try {
-      await saveProject.mutateAsync(project);
+      const savedProject = await saveProject.mutateAsync(project);
+      if (!project.id) updateProject(index, { id: savedProject.id });
+      setImageMessages(current => ({ ...current, [index]: "Cambios guardados. La imagen ya se muestra en el sitio público." }));
     } finally {
       setBusyIndex(null);
     }
@@ -183,16 +189,23 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
       {projects.map((project, index) => (
         <article key={project.id ?? `new-${index}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="grid gap-0 lg:grid-cols-[280px_1fr]">
-            <div className="relative min-h-56 bg-slate-100">
+            <div className="relative min-h-56 bg-slate-100" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); uploadProjectImage(index, event.dataTransfer.files?.[0]); }}>
               {project.imageUrl ? <img className="absolute inset-0 h-full w-full object-cover" src={project.imageUrl} alt={project.altText || project.title} /> : <div className="absolute inset-0 grid place-items-center text-slate-400"><FileImage /></div>}
-              <label className="absolute bottom-3 left-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white shadow-lg"><Upload className="h-4 w-4" />{busyIndex === index ? "Subiendo…" : "Cambiar imagen"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={event => uploadProjectImage(index, event)} /></label>
+              <label className="absolute inset-x-3 bottom-3 grid cursor-pointer gap-1 rounded-xl border border-white/30 bg-slate-950/95 p-3 text-white shadow-lg backdrop-blur-sm transition hover:bg-slate-900">
+                <span className="flex items-center gap-2 text-sm font-bold"><ImagePlus className="h-4 w-4 text-orange-300" />{busyIndex === index ? "Subiendo foto…" : "Subir o reemplazar foto"}</span>
+                <span className="text-xs text-slate-300">Arrastrá una imagen aquí o hacé clic. JPG, PNG o WEBP · máximo 8 MB.</span>
+                <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={busyIndex === index} onChange={event => uploadProjectImage(index, event.target.files?.[0])} />
+              </label>
             </div>
             <div className="space-y-4 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Proyecto {String(index + 1).padStart(2, "0")}</span><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={project.visible} onChange={event => updateProject(index, { visible: event.target.checked })} /> Visible en el sitio</label></div>
+              <div className={`rounded-lg border px-3 py-2 text-sm leading-5 ${imageMessages[index]?.startsWith("No se pudo") ? "border-red-200 bg-red-50 text-red-700" : imageMessages[index] ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+                {imageMessages[index] || "Paso 1: subí una foto nueva. Paso 2: guardá el proyecto para actualizar la galería pública."}
+              </div>
               <div className="grid gap-3 md:grid-cols-2"><Input aria-label="Categoría" value={project.category} onChange={event => updateProject(index, { category: event.target.value })} placeholder="Categoría" /><Input aria-label="Título" value={project.title} onChange={event => updateProject(index, { title: event.target.value })} placeholder="Título" /></div>
               <Textarea aria-label="Descripción estructural" rows={3} value={project.description} onChange={event => updateProject(index, { description: event.target.value })} placeholder="Descripción estructural" />
               <Input aria-label="Texto alternativo" value={project.altText} onChange={event => updateProject(index, { altText: event.target.value })} placeholder="Descripción para accesibilidad" />
-              <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex gap-2"><Button type="button" size="icon" variant="outline" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Mover arriba"><ArrowUp className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={() => move(index, 1)} disabled={index === projects.length - 1} aria-label="Mover abajo"><ArrowDown className="h-4 w-4" /></Button></div><div className="flex gap-2"><Button type="button" variant="destructive" size="sm" disabled={!project.id || busyIndex === index} onClick={async () => { if (project.id && confirm("¿Eliminar este proyecto de la galería?")) { await deleteProject.mutateAsync({ id: project.id }); setProjects(projects.filter((_, current) => current !== index)); } }}><Trash2 className="mr-2 h-4 w-4" />Eliminar</Button><Button type="button" size="sm" disabled={busyIndex === index || saveProject.isPending} onClick={() => save(index)}><Save className="mr-2 h-4 w-4" />Guardar proyecto</Button></div></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex gap-2"><Button type="button" size="icon" variant="outline" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Mover arriba"><ArrowUp className="h-4 w-4" /></Button><Button type="button" size="icon" variant="outline" onClick={() => move(index, 1)} disabled={index === projects.length - 1} aria-label="Mover abajo"><ArrowDown className="h-4 w-4" /></Button></div><div className="flex gap-2"><Button type="button" variant="destructive" size="sm" disabled={!project.id || busyIndex === index} onClick={async () => { if (project.id && confirm("¿Eliminar este proyecto de la galería?")) { await deleteProject.mutateAsync({ id: project.id }); setProjects(projects.filter((_, current) => current !== index)); } }}><Trash2 className="mr-2 h-4 w-4" />Eliminar</Button><Button type="button" size="sm" disabled={busyIndex === index || saveProject.isPending} onClick={() => save(index)}><Save className="mr-2 h-4 w-4" />{imageMessages[index]?.includes("lista") ? "Guardar nueva imagen" : "Guardar proyecto"}</Button></div></div>
             </div>
           </div>
         </article>
