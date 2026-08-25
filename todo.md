@@ -7,3 +7,7 @@
 - [x] Create web-ready crops of the three supplied construction photos.
 - [x] Replace the hero, introduction, and gallery imagery with the supplied project photos.
 - [x] Verify the updated project-photo layout at desktop and mobile widths.
+- [ ] Sync the local preview with the latest shared project version.
+- [x] Tighten the visible crop of the Faro Estructuras logo.
+- [x] Rewrite project-image descriptions to identify structural construction details.
+- [x] Verify the refined logo and project descriptions.

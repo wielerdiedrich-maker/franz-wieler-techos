@@ -199,3 +199,22 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 560px) { .brand-copy strong { font-size: 11px; }.brand-copy span { font-size: 7px; }.hero-copy-wrap { min-height: 530px; padding: 64px 20px 76px; }.hero-section h1 { font-size: clamp(48px, 14vw, 67px); }.hero-description { font-size: 17px; }.hero-actions { width: 100%; }.button { flex: 1 1 auto; padding: 12px 14px; font-size: 12px; }.hero-contact-rail { padding-top: 37px; display: grid; gap: 5px; }.intro-section, .proof-section, .contact-section { width: min(100% - 40px, 650px); padding: 78px 0; }.intro-details, .form-row { grid-template-columns: 1fr; gap: 18px; }.services-section, .projects-section { padding-left: 20px; padding-right: 20px; }.services-grid { grid-template-columns: 1fr; }.service-card { min-height: 270px; }.service-card p { min-height: auto; }.service-baseline { justify-content: flex-start; flex-wrap: wrap; }.service-baseline i { width: 27px; }.proof-list article { grid-template-columns: 21px 1fr; gap: 13px; }.proof-list article > svg { display: none; }.projects-heading { display: grid; align-items: start; }.project-grid { grid-template-columns: 1fr; }.project-card, .project-card-1 { min-height: 340px; }.project-card-1 { grid-row: auto; }.project-meta h3 { font-size: 24px; }.gallery-note { font-size: 13px; }.coverage-map-art { min-height: 225px; }.coverage-copy { padding: 65px 25px; }.contact-section { gap: 36px; }.quote-form { padding: 21px; }.footer-links { grid-template-columns: 1fr; }.footer-bottom { display: grid; line-height: 1.5; }.floating-catalog { right: 14px; bottom: 14px; }.floating-catalog span { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .hero-copy-wrap > *, .intro-copy, .service-card, .proof-list article, .project-card, .contact-intro, .quote-form { animation: rise-in .55s var(--ease-out) both; } .hero-copy-wrap > *:nth-child(2) { animation-delay: .05s; }.hero-copy-wrap > *:nth-child(3) { animation-delay: .1s; }.hero-copy-wrap > *:nth-child(4) { animation-delay: .15s; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Faro mark crop and structural gallery-caption refinements. */
+.brand-mark { height: 84px; overflow: hidden; }
+.brand-mark img { height: 84px; transform: scale(1.8); }
+.footer-main .brand-mark { height: 100px; }
+.footer-main .brand-mark img { height: 100px; transform: scale(1.8); }
+.project-meta h3 { margin: 8px 0 7px; max-width: 250px; }
+.project-meta p { max-width: 275px; margin: 0; color: #e2e8e5; font-size: 13px; line-height: 1.35; }
+
+@media (max-width: 800px) {
+  .brand-mark { height: 66px; }
+  .brand-mark img { height: 66px; transform: scale(1.65); }
+  .footer-main .brand-mark { height: 90px; }
+  .footer-main .brand-mark img { height: 90px; transform: scale(1.65); }
+}
+
+@media (max-width: 560px) {
+  .project-meta p { font-size: 12px; }
+}

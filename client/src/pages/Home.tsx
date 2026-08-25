@@ -70,17 +70,20 @@ const services = [
 const projects = [
   {
     category: "Estructura en montaje",
-    title: "Tinglado de gran luz",
+    title: "Armazón de gran luz en montaje",
+    description: "Columnas reticuladas, cerchas de gran luz y cubierta metálica en proceso de montaje.",
     image: ASSETS.frame,
   },
   {
     category: "Galpón agrícola",
     title: "Cubierta para maquinaria",
+    description: "Pórticos reticulados, laterales de calamina y altura libre para proteger equipos agrícolas.",
     image: ASSETS.shed,
   },
   {
     category: "Montaje nocturno",
-    title: "Estructura lista para avanzar",
+    title: "Montaje nocturno de cubierta",
+    description: "Techo de doble pendiente, vigas reticuladas y apoyos metálicos instalados directamente en obra.",
     image: ASSETS.hero,
   },
 ];
@@ -363,13 +366,14 @@ export default function Home() {
             </CatalogLink>
           </div>
           <div className="project-grid">
-            {projects.map(({ category, title, image }, index) => (
+            {projects.map(({ category, title, description, image }, index) => (
               <CatalogLink className={`project-card project-card-${index + 1}`} key={title} label={`Abrir catálogo: ${title}`}>
                 <img src={image} alt={title} />
                 <div className="project-overlay" />
                 <div className="project-meta">
                   <span>{category}</span>
                   <h3>{title}</h3>
+                  <p>{description}</p>
                 </div>
                 <span className="project-open"><ArrowUpRight size={20} /></span>
               </CatalogLink>
