@@ -19,7 +19,8 @@ const projectInput = z.object({
   title: z.string().min(1).max(180),
   description: z.string().min(1).max(1600),
   altText: z.string().min(1).max(250),
-  imageUrl: z.string().min(1).max(2000),
+  // A new project may be saved as an incomplete draft while the client prepares its image.
+  imageUrl: z.string().max(2000),
   imageKey: z.string().max(512).nullable().optional(),
   visible: z.boolean(),
   sortOrder: z.number().int().min(0).max(1000),
@@ -105,6 +106,9 @@ export const siteRouter = router({
       const [draftRow] = await db.select().from(siteDrafts).orderBy(asc(siteDrafts.id)).limit(1);
       if (!draftRow) throw new TRPCError({ code: "BAD_REQUEST", message: "No hay cambios en borrador para publicar." });
       const draft = draftInput.parse({ content: JSON.parse(draftRow.contentJson), projects: JSON.parse(draftRow.projectsJson) });
+      if (draft.projects.some(project => !project.imageUrl.trim())) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Subí una imagen para cada proyecto antes de publicarlo." });
+      }
 
       await db.transaction(async tx => {
         await tx.delete(siteContent);

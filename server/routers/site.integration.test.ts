@@ -75,4 +75,64 @@ describe.sequential("dedicated client draft workflow", () => {
       await deleteFirebaseObject(uploaded.key);
     }
   }, 30_000);
+
+  it("allows an incomplete new project in a draft and blocks publish until it has an image", async () => {
+    const admin = await createClientAdminCaller();
+    const visitor = siteRouter.createCaller({ req: { headers: {} }, res: {}, user: null } as any);
+    const initial = await visitor.public();
+    const draft = snapshotFromSite(initial);
+    draft.projects.push({
+      category: "Nuevo proyecto",
+      title: "Título del proyecto",
+      description: "Describí la estructura, la cubierta y los detalles principales de este trabajo.",
+      altText: "Proyecto de Faro Estructuras",
+      imageUrl: "",
+      imageKey: null,
+      visible: true,
+      sortOrder: draft.projects.length,
+    });
+
+    try {
+      await admin.admin.saveDraft(draft);
+      expect((await admin.admin.dashboard()).draft?.projects).toHaveLength(initial.projects.length + 1);
+      await expect(admin.admin.publishDraft()).rejects.toThrow("Subí una imagen para cada proyecto antes de publicarlo.");
+      expect((await visitor.public()).projects).toHaveLength(initial.projects.length);
+    } finally {
+      await admin.admin.discardDraft();
+    }
+  }, 30_000);
+
+  it("publishes a newly added Firebase-backed project and restores the original gallery afterward", async () => {
+    const admin = await createClientAdminCaller();
+    const visitor = siteRouter.createCaller({ req: { headers: {} }, res: {}, user: null } as any);
+    const initial = await visitor.public();
+    const originalSnapshot = snapshotFromSite(initial);
+    const onePixelPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL9EwAAAABJRU5ErkJggg==";
+    const uploaded = await admin.admin.uploadImage({ fileName: "new-project-check.png", mimeType: "image/png", base64: onePixelPng });
+    const title = "Proyecto nuevo de validación";
+    const draft = snapshotFromSite(initial);
+    draft.projects.push({
+      category: "Nuevo proyecto",
+      title,
+      description: "Estructura de validación para confirmar el flujo de publicación de nuevos proyectos.",
+      altText: "Proyecto nuevo de validación Faro Estructuras",
+      imageUrl: uploaded.url,
+      imageKey: uploaded.key,
+      visible: true,
+      sortOrder: draft.projects.length,
+    });
+
+    try {
+      await admin.admin.saveDraft(draft);
+      expect((await admin.admin.dashboard()).draft?.projects).toHaveLength(initial.projects.length + 1);
+      await admin.admin.publishDraft();
+      const published = await visitor.public();
+      expect(published.projects.find(project => project.title === title)?.imageUrl).toBe(uploaded.url);
+      expect((await fetch(uploaded.url)).ok).toBe(true);
+    } finally {
+      await admin.admin.saveDraft(originalSnapshot);
+      await admin.admin.publishDraft();
+      await deleteFirebaseObject(uploaded.key);
+    }
+  }, 30_000);
 });

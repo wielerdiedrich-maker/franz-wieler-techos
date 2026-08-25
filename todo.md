@@ -56,3 +56,6 @@
 - [x] Verify Firebase image upload, draft preview, publishing, and public image rendering.
 - [x] Discover the project’s active Cloud Storage bucket and reconcile the Firebase Storage configuration.
 - [x] Confirm the exact configured bucket appears in the project’s active Cloud Storage bucket list.
+- [x] Diagnose why the client portal’s “Agregar proyecto” control does not add a usable project card.
+- [x] Fix the Add Project control and preserve the draft → preview → publish workflow.
+- [x] Verify a client can add, save, preview, publish, and discard a new project without changing existing projects.

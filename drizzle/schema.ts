@@ -1,4 +1,4 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, foreignKey, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -69,7 +69,24 @@ export const clientAdminAccounts = mysqlTable("client_admin_accounts", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
+/** One-time, hashed password-reset tokens for the independent client portal. */
+export const clientPasswordResetTokens = mysqlTable("client_password_reset_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  clientAdminId: int("client_admin_id").notNull(),
+  tokenHash: varchar("token_hash", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, table => [
+  foreignKey({
+    name: "client_reset_tokens_admin_fk",
+    columns: [table.clientAdminId],
+    foreignColumns: [clientAdminAccounts.id],
+  }).onDelete("cascade"),
+]);
+
 export type SiteContent = typeof siteContent.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type SiteDraft = typeof siteDrafts.$inferSelect;
 export type ClientAdminAccount = typeof clientAdminAccounts.$inferSelect;
+export type ClientPasswordResetToken = typeof clientPasswordResetTokens.$inferSelect;
