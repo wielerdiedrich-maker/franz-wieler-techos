@@ -36,12 +36,24 @@ async function getDatabase() {
 /** Creates the initial client account exactly once from securely injected project credentials. */
 export async function ensureClientAdminAccount() {
   const db = await getDatabase();
-  const [existing] = await db.select().from(clientAdminAccounts).limit(1);
-  if (existing) return existing;
-
   const email = normalizeEmail(process.env.CLIENT_ADMIN_EMAIL || "");
   const password = process.env.CLIENT_ADMIN_PASSWORD || "";
   if (!email || !password) throw new Error("Initial client admin credentials are not configured");
+  const [existing] = await db.select().from(clientAdminAccounts).limit(1);
+  if (existing) {
+    const existingHash = await deriveHash(password, existing.passwordSalt);
+    const emailMatches = existing.email === email;
+    const passwordMatches = existingHash === existing.passwordHash;
+    if (emailMatches && passwordMatches) return existing;
+
+    const salt = randomBytes(32).toString("hex");
+    const passwordHash = await deriveHash(password, salt);
+    await db.update(clientAdminAccounts).set({ email, passwordSalt: salt, passwordHash }).where(eq(clientAdminAccounts.id, existing.id));
+    const [updated] = await db.select().from(clientAdminAccounts).where(eq(clientAdminAccounts.id, existing.id)).limit(1);
+    if (!updated) throw new Error("Client admin account could not be updated");
+    return updated;
+  }
+
   const salt = randomBytes(32).toString("hex");
   const passwordHash = await deriveHash(password, salt);
   await db.insert(clientAdminAccounts).values({ email, passwordSalt: salt, passwordHash });

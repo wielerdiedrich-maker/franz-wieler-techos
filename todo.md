@@ -39,3 +39,8 @@
 - [x] Verify the client login, draft, preview, publish, and logout experience.
 - [x] Verify an authenticated client session loads the protected portal and expires cleanly at logout.
 - [x] Verify the dedicated client session can save a draft, preview it, publish it, and expose changes publicly only after publishing.
+- [ ] Restart the preview after this newest shared-session synchronization.
+- [x] Reproduce the reported dedicated client-admin login failure against the current deployed configuration.
+- [x] Reconcile the configured client credentials with the stored password hash without exposing passwords.
+- [ ] Verify the corrected dedicated client login succeeds through the public admin endpoint.
+- [x] Reset the client-admin portal to the confirmed Faro Estructuras email and password.
