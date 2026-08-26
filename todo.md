@@ -66,3 +66,10 @@
 - [x] Add direct editing controls for existing project cards in the main project list.
 - [x] Add a safe deletion control for existing project cards that applies through the draft → preview → publish workflow.
 - [x] Verify direct project editing and deletion on mobile and desktop without altering unrelated projects.
+- [x] Create and validate a reusable skill for Firebase-backed client project portals with draft review and direct project management.
+- [x] Test the reusable Firebase client-gallery portal skill in a clean implementation workspace and refine any gaps found.
+- [x] Build a fresh minimal full-stack project that applies the reusable Firebase client-gallery portal skill.
+- [x] Verify the fresh project’s independent auth, tRPC draft workflow, real Firebase Admin upload, and mobile/desktop portal actions.
+- [x] Refine and revalidate the reusable skill from the fresh full-stack project evidence.
+- [x] Add a visible public-menu “Acceso cliente” link to the client portal.
+- [x] Verify the client-access menu link is visible and routes correctly on desktop and mobile.

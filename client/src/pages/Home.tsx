@@ -178,6 +178,9 @@ export default function Home() {
                 {label}
               </a>
             ))}
+            <a className="client-access-nav" href="/admin" aria-label="Acceso cliente al portal de administración">
+              Acceso cliente <ArrowUpRight size={14} strokeWidth={2.2} />
+            </a>
           </nav>
           <div className="header-actions">
             <CatalogLink className="catalog-header-link" href={catalogUrl}>
@@ -208,6 +211,9 @@ export default function Home() {
               {label}
             </a>
           ))}
+          <a className="mobile-client-access" href="/admin" onClick={() => setMenuOpen(false)}>
+            Acceso cliente <ArrowUpRight size={17} />
+          </a>
           <CatalogLink className="mobile-catalog" href={catalogUrl} label="Abrir catálogo de WhatsApp">
             Ver catálogo por WhatsApp <ArrowUpRight size={17} />
           </CatalogLink>
