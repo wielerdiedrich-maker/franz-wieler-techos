@@ -76,6 +76,30 @@ describe.sequential("dedicated client draft workflow", () => {
     }
   }, 30_000);
 
+  it("keeps an uploaded image recoverable until it is saved into a draft, then preserves it for a new portal session", async () => {
+    const admin = await createClientAdminCaller();
+    const visitor = siteRouter.createCaller({ req: { headers: {} }, res: {}, user: null } as any);
+    const initial = await visitor.public();
+    const originalSnapshot = snapshotFromSite(initial);
+    const onePixelPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL9EwAAAABJRU5ErkJggg==";
+    const uploaded = await admin.admin.uploadImage({ fileName: "draft-persistence-check.png", mimeType: "image/png", base64: onePixelPng });
+
+    try {
+      expect((await admin.admin.recoverableImages()).some(image => image.key === uploaded.key)).toBe(true);
+      const draft = snapshotFromSite(initial);
+      draft.projects[0] = { ...draft.projects[0], imageUrl: uploaded.url, imageKey: uploaded.key };
+      await admin.admin.saveDraft(draft);
+
+      expect((await admin.admin.recoverableImages()).some(image => image.key === uploaded.key)).toBe(false);
+      const freshSession = await createClientAdminCaller();
+      expect((await freshSession.admin.dashboard()).draft?.projects[0]?.imageKey).toBe(uploaded.key);
+    } finally {
+      await admin.admin.saveDraft(originalSnapshot);
+      await admin.admin.publishDraft();
+      await deleteFirebaseObject(uploaded.key);
+    }
+  }, 30_000);
+
   it("allows an incomplete new project in a draft and blocks publish until it has an image", async () => {
     const admin = await createClientAdminCaller();
     const visitor = siteRouter.createCaller({ req: { headers: {} }, res: {}, user: null } as any);

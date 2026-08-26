@@ -73,3 +73,7 @@
 - [x] Refine and revalidate the reusable skill from the fresh full-stack project evidence.
 - [x] Add a visible public-menu “Acceso cliente” link to the client portal.
 - [x] Verify the client-access menu link is visible and routes correctly on desktop and mobile.
+- [x] Inspect why client-uploaded project images disappear after closing the portal and identify whether they can be recovered.
+- [x] Make client image uploads durable across portal reloads or clearly persist them as drafts before the client closes the portal.
+- [x] Verify image upload persistence through reload and explicit publication.
+- [x] Verify one auto-saved Firebase upload survives reload or a fresh client session, is explicitly published, appears in the public gallery, and is restored safely.

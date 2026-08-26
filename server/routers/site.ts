@@ -4,7 +4,7 @@ import { z } from "zod";
 import { DEFAULT_PROJECTS, DEFAULT_SITE_CONTENT, type SiteContentMap } from "@shared/siteContent";
 import { projects, siteContent, siteDrafts } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { uploadProjectImageToFirebase } from "../firebaseStorage";
+import { listRecoverableProjectImages, uploadProjectImageToFirebase } from "../firebaseStorage";
 import { publicProcedure, router } from "../_core/trpc";
 import { clientAdminProcedure } from "../clientAdminProcedure";
 
@@ -92,6 +92,14 @@ export const siteRouter = router({
   public: publicProcedure.query(() => getPublishedSiteData()),
   admin: router({
     dashboard: clientAdminProcedure.query(() => getAdminDraftData()),
+    recoverableImages: clientAdminProcedure.query(async ({ ctx }) => {
+      const dashboard = await getAdminDraftData();
+      const referencedKeys = [
+        ...dashboard.published.projects.map(project => project.imageKey),
+        ...(dashboard.draft?.projects.map(project => project.imageKey) ?? []),
+      ];
+      return listRecoverableProjectImages(ctx.clientAdmin.id, referencedKeys);
+    }),
     saveDraft: clientAdminProcedure.input(draftInput).mutation(async ({ ctx, input }) => {
       await saveDraftSnapshot(input, ctx.clientAdmin.id);
       return { success: true } as const;

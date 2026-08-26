@@ -62,6 +62,22 @@ export async function uploadProjectImageToFirebase(input: {
   return { key, url };
 }
 
+/** Lists a client's unreferenced uploads so an interrupted browser session can recover them into a new draft. */
+export async function listRecoverableProjectImages(ownerId: number, referencedKeys: Iterable<string | null | undefined>) {
+  const referenced = new Set(Array.from(referencedKeys).filter((key): key is string => Boolean(key)));
+  const bucket = getStorage(getFirebaseApp()).bucket();
+  const [files] = await bucket.getFiles({ prefix: `projects/${ownerId}/` });
+  return files
+    .filter(file => !referenced.has(file.name) && !file.name.endsWith("client-upload-check.png"))
+    .map(file => {
+      const token = String(file.metadata.metadata?.firebaseStorageDownloadTokens || "").split(",")[0];
+      if (!token) return null;
+      const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(file.name)}?alt=media&token=${token}`;
+      return { key: file.name, url, fileName: file.name.split("/").at(-1) || "imagen", createdAt: file.metadata.timeCreated || null };
+    })
+    .filter((image): image is NonNullable<typeof image> => Boolean(image));
+}
+
 /** Used only by integration tests to remove their temporary Firebase object. */
 export async function deleteFirebaseObject(key: string) {
   await getStorage(getFirebaseApp()).bucket().file(key).delete({ ignoreNotFound: true });

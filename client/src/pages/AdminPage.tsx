@@ -153,8 +153,11 @@ function ContentEditor({ content, onChange }: { content: ContentState; onChange:
   return <div className="grid gap-4 lg:grid-cols-2">{textFields.map(field => <label key={field.key} className={`grid gap-2 rounded-xl border border-slate-200 bg-white p-4 ${field.multiline ? "lg:col-span-2" : ""}`}><span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{field.label}</span>{field.multiline ? <Textarea value={content[field.key] ?? ""} onChange={event => onChange(field.key, event.target.value)} rows={3} /> : <Input value={content[field.key] ?? ""} onChange={event => onChange(field.key, event.target.value)} />}</label>)}</div>;
 }
 
-function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; setProjects: React.Dispatch<React.SetStateAction<ProjectDraft[]>> }) {
+type RecoverableImage = { key: string; url: string; fileName: string; createdAt: string | null };
+
+function ProjectEditor({ projects, setProjects, onPersistProjects }: { projects: ProjectDraft[]; setProjects: React.Dispatch<React.SetStateAction<ProjectDraft[]>>; onPersistProjects: (projects: ProjectDraft[], message: string) => Promise<void> }) {
   const uploadImage = trpc.site.admin.uploadImage.useMutation();
+  const recoverableImages = trpc.site.admin.recoverableImages.useQuery();
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
   const [imageMessages, setImageMessages] = useState<Record<number, string>>({});
   const [newProjectIndex, setNewProjectIndex] = useState<number | null>(null);
@@ -175,15 +178,18 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
     });
     return () => { window.cancelAnimationFrame(frame); window.cancelAnimationFrame(nestedFrame); };
   }, [newProjectIndex, projects.length]);
-  const updateProject = (index: number, patch: Partial<ProjectDraft>) => setProjects(projects.map((project, current) => current === index ? { ...project, ...patch } : project));
+  const updateProject = (index: number, patch: Partial<ProjectDraft>) => setProjects(current => current.map((project, projectIndex) => projectIndex === index ? { ...project, ...patch } : project));
   const uploadProjectImage = async (index: number, file?: File) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024) { setImageMessages(current => ({ ...current, [index]: "Usá JPG, PNG o WEBP de hasta 8 MB." })); return; }
     setBusyIndex(index);
     try {
       const uploaded = await uploadImage.mutateAsync({ fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64: await readFileAsBase64(file) });
-      updateProject(index, { imageUrl: uploaded.url, imageKey: uploaded.key });
-      setImageMessages(current => ({ ...current, [index]: `“${file.name}” se guardó en Firebase. Guardá el borrador para incluirla en la vista previa.` }));
+      const nextProjects = projects.map((project, projectIndex) => projectIndex === index ? { ...project, imageUrl: uploaded.url, imageKey: uploaded.key } : project);
+      setProjects(nextProjects);
+      await onPersistProjects(nextProjects, `La imagen “${file.name}” se guardó automáticamente en el borrador.`);
+      await recoverableImages.refetch();
+      setImageMessages(current => ({ ...current, [index]: `“${file.name}” se guardó en Firebase y en el borrador. Ya no se perderá al cerrar el portal.` }));
     } catch { setImageMessages(current => ({ ...current, [index]: "No se pudo subir la imagen. Probá nuevamente." })); }
     finally { setBusyIndex(null); }
   };
@@ -206,12 +212,26 @@ function ProjectEditor({ projects, setProjects }: { projects: ProjectDraft[]; se
     setProjects(current => current.filter((_, projectIndex) => projectIndex !== index).map((entry, sortOrder) => ({ ...entry, sortOrder })));
     toast.success("Proyecto eliminado del borrador", { description: "Podés restaurarlo con Descartar borrador antes de publicar." });
   };
+  const recoverImage = async (image: RecoverableImage) => {
+    const index = projects.length;
+    const nextProjects = [...projects, { ...blankProject(index), title: "Proyecto recuperado", imageUrl: image.url, imageKey: image.key }];
+    setProjects(nextProjects);
+    setNewProjectIndex(index);
+    try {
+      await onPersistProjects(nextProjects, `La imagen “${image.fileName}” se añadió automáticamente a un nuevo proyecto en el borrador.`);
+      await recoverableImages.refetch();
+      toast.success("Imagen recuperada", { description: "Completá los datos del nuevo proyecto y revisalo antes de publicar." });
+    } catch {
+      setImageMessages(current => ({ ...current, [index]: "La imagen se encontró, pero no se pudo guardar el borrador. Probá nuevamente." }));
+    }
+  };
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-xl text-sm leading-6 text-slate-600">Editá o eliminá cada proyecto directamente aquí. Los cambios se guardan primero como borrador.</p>
         <Button type="button" onClick={() => { const index = projects.length; setProjects([...projects, blankProject(index)]); setNewProjectIndex(index); toast.success("Proyecto agregado", { description: "Te llevamos al nuevo proyecto. Completá los datos y subí una imagen antes de publicarlo." }); }}><Plus className="mr-2 h-4 w-4" />Agregar proyecto</Button>
       </div>
+      {recoverableImages.data?.length ? <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-orange-700">Imágenes recuperables</p><h2 className="mt-1 text-lg font-bold text-slate-950">Encontramos fotos subidas que todavía no estaban guardadas en un proyecto</h2><p className="mt-1 text-sm leading-6 text-slate-600">Elegí una para añadirla al borrador. Así podés recuperar una carga anterior sin volver a subirla.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{recoverableImages.data.map(image => <article key={image.key} className="overflow-hidden rounded-xl border border-orange-200 bg-white"><img className="aspect-[4/3] w-full object-cover" src={image.url} alt="Imagen recuperable" /><div className="space-y-2 p-3"><p className="truncate text-xs font-semibold text-slate-600" title={image.fileName}>{image.fileName}</p><Button type="button" size="sm" className="w-full bg-orange-500 hover:bg-orange-600" onClick={() => recoverImage(image)}><Plus className="mr-2 h-4 w-4" />Usar en un proyecto</Button></div></article>)}</div></section> : null}
       {projects.map((project, index) => (
         <article id={`project-card-${index}`} tabIndex={-1} key={project.id ?? `new-${index}`} className="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="grid gap-0 lg:grid-cols-[280px_1fr]">
@@ -294,6 +314,10 @@ function AdminWorkspace() {
     setLocation("/admin");
   };
   const discard = async () => { await discardDraftMutation.mutateAsync(); setStatus("Borrador descartado. Se restauró la última versión publicada."); setLocation("/admin"); };
+  const persistUploadedProjects = async (nextProjects: ProjectDraft[], message: string) => {
+    await saveDraftMutation.mutateAsync({ content: Object.entries(content).map(([key, value]) => ({ key, value })), projects: nextProjects });
+    setStatus(message);
+  };
 
   if (dashboard.isLoading) return <div className="grid min-h-96 place-items-center"><Loader2 className="animate-spin text-orange-500" /></div>;
   if (dashboard.isError) return <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">No se pudo cargar el editor. Actualizá la página o volvé a iniciar sesión.</div>;
@@ -303,7 +327,7 @@ function AdminWorkspace() {
   const previewContent = dashboard.data.draft ? Object.fromEntries(dashboard.data.draft.content.map(entry => [entry.key, entry.value])) : content;
   const previewProjects = dashboard.data.draft?.projects.map(project => ({ ...project, imageKey: project.imageKey ?? null })) ?? projects;
 
-  return <div className="mx-auto max-w-6xl space-y-7 py-2"><header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">Administración privada</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Editor de Faro Estructuras</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Guardá cambios como borrador, revisalos y publicalos solo cuando estén listos.</p></div><a className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 underline underline-offset-4" href="/" target="_blank" rel="noreferrer">Ver sitio publicado</a></header>{status && <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4" />{status}</div>}{isPreviewRoute ? <PreviewPanel content={previewContent} projects={previewProjects} onEdit={() => setLocation("/admin")} onPublish={publish} publishing={publishDraftMutation.isPending} /> : isProjectsRoute ? <><ProjectEditor projects={projects} setProjects={setProjects} />{actionBar}</> : <div className="space-y-7"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold text-slate-950">Información de negocio</h2><p className="mt-1 text-sm text-slate-600">Estos datos quedarán en el borrador hasta que los publiques.</p><div className="mt-5 grid gap-4 md:grid-cols-3">{businessFields.map(field => <label key={field.key} className="grid gap-2"><span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{field.label}</span><Input value={content[field.key] ?? ""} placeholder={field.placeholder} onChange={event => setContent({ ...content, [field.key]: event.target.value })} /></label>)}</div></section><section><div className="mb-4"><h2 className="text-lg font-bold text-slate-950">Textos del sitio</h2><p className="mt-1 text-sm text-slate-600">Editá con tranquilidad: primero guardás un borrador y luego lo revisás antes de publicar.</p></div><ContentEditor content={content} onChange={(key, value) => setContent({ ...content, [key]: value })} /></section>{actionBar}</div>}</div>;
+  return <div className="mx-auto max-w-6xl space-y-7 py-2"><header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">Administración privada</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Editor de Faro Estructuras</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Guardá cambios como borrador, revisalos y publicalos solo cuando estén listos.</p></div><a className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 underline underline-offset-4" href="/" target="_blank" rel="noreferrer">Ver sitio publicado</a></header>{status && <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4" />{status}</div>}{isPreviewRoute ? <PreviewPanel content={previewContent} projects={previewProjects} onEdit={() => setLocation("/admin")} onPublish={publish} publishing={publishDraftMutation.isPending} /> : isProjectsRoute ? <><ProjectEditor projects={projects} setProjects={setProjects} onPersistProjects={persistUploadedProjects} />{actionBar}</> : <div className="space-y-7"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold text-slate-950">Información de negocio</h2><p className="mt-1 text-sm text-slate-600">Estos datos quedarán en el borrador hasta que los publiques.</p><div className="mt-5 grid gap-4 md:grid-cols-3">{businessFields.map(field => <label key={field.key} className="grid gap-2"><span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{field.label}</span><Input value={content[field.key] ?? ""} placeholder={field.placeholder} onChange={event => setContent({ ...content, [field.key]: event.target.value })} /></label>)}</div></section><section><div className="mb-4"><h2 className="text-lg font-bold text-slate-950">Textos del sitio</h2><p className="mt-1 text-sm text-slate-600">Editá con tranquilidad: primero guardás un borrador y luego lo revisás antes de publicar.</p></div><ContentEditor content={content} onChange={(key, value) => setContent({ ...content, [key]: value })} /></section>{actionBar}</div>}</div>;
 }
 
 export default function AdminPage() { return <ClientPortalGate><AdminWorkspace /></ClientPortalGate>; }
