@@ -101,6 +101,19 @@ function BrandMark() {
   );
 }
 
+function PublicSiteLoading() {
+  return (
+    <main className="site-loading-shell" aria-busy="true" aria-live="polite">
+      <div className="site-loading-panel">
+        <p className="eyebrow eyebrow-light"><span /> FARO ESTRUCTURAS</p>
+        <h1>Preparando tu proyecto.</h1>
+        <p>Cargando trabajos, servicios y formas de contacto.</p>
+        <div className="site-loading-lines" aria-hidden="true"><i /><i /><i /></div>
+      </div>
+    </main>
+  );
+}
+
 function CatalogLink({
   children,
   className = "",
@@ -142,6 +155,8 @@ export default function Home() {
     window.addEventListener("resize", closeMenu);
     return () => window.removeEventListener("resize", closeMenu);
   }, []);
+
+  if (managedSite.isPending) return <PublicSiteLoading />;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

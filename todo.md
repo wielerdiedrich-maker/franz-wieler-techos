@@ -77,3 +77,10 @@
 - [x] Make client image uploads durable across portal reloads or clearly persist them as drafts before the client closes the portal.
 - [x] Verify image upload persistence through reload and explicit publication.
 - [x] Verify one auto-saved Firebase upload survives reload or a fresh client session, is explicitly published, appears in the public gallery, and is restored safely.
+- [ ] Recheck the transactional sender configuration and unblock password-recovery email delivery.
+- [ ] Verify the password-recovery link, one-time token use, and login with a new password without altering the client’s current credentials.
+- [ ] Publish the verified password-recovery feature.
+- [x] Diagnose the public mobile white loading gap shown between page sections.
+- [x] Replace the white loading gap with an explicit background-consistent pending state for managed public content.
+- [x] Verify the pending state and rendered loading experience on mobile and desktop.
+- [x] Add deterministic coverage that the public page renders its intended non-white surface while `site.public` is pending.
