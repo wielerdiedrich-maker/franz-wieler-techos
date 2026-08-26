@@ -63,3 +63,6 @@
 - [x] Verify the new-project success toast and preserve the draft workflow.
 - [x] Make the mobile Add Project interaction scroll and focus the newly created card so it is immediately visible.
 - [x] Verify the mobile Add Project interaction adds a card, reveals it, and preserves the draft workflow.
+- [x] Add direct editing controls for existing project cards in the main project list.
+- [x] Add a safe deletion control for existing project cards that applies through the draft → preview → publish workflow.
+- [x] Verify direct project editing and deletion on mobile and desktop without altering unrelated projects.

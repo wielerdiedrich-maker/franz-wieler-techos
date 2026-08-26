@@ -135,4 +135,32 @@ describe.sequential("dedicated client draft workflow", () => {
       await deleteFirebaseObject(uploaded.key);
     }
   }, 30_000);
+
+  it("publishes a direct project edit and deletion only after approval, then restores the gallery", async () => {
+    const admin = await createClientAdminCaller();
+    const visitor = siteRouter.createCaller({ req: { headers: {} }, res: {}, user: null } as any);
+    const initial = await visitor.public();
+    const originalSnapshot = snapshotFromSite(initial);
+    const editedTitle = "Proyecto editado de validación";
+    const removedTitle = initial.projects.at(-1)?.title;
+    const draft = snapshotFromSite(initial);
+    draft.projects[0] = { ...draft.projects[0], title: editedTitle, description: "Descripción editada para validar la gestión directa de proyectos." };
+    draft.projects = draft.projects.slice(0, -1).map((project: any, sortOrder: number) => ({ ...project, sortOrder }));
+
+    try {
+      await admin.admin.saveDraft(draft);
+      const savedDraft = await admin.admin.dashboard();
+      expect(savedDraft.draft?.projects[0]?.title).toBe(editedTitle);
+      expect(savedDraft.draft?.projects.some(project => project.title === removedTitle)).toBe(false);
+      expect((await visitor.public()).projects[0]?.title).toBe(initial.projects[0]?.title);
+
+      await admin.admin.publishDraft();
+      const published = await visitor.public();
+      expect(published.projects[0]?.title).toBe(editedTitle);
+      expect(published.projects.some(project => project.title === removedTitle)).toBe(false);
+    } finally {
+      await admin.admin.saveDraft(originalSnapshot);
+      await admin.admin.publishDraft();
+    }
+  }, 30_000);
 });
