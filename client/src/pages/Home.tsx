@@ -486,7 +486,7 @@ export default function Home() {
           <div><span>RECORRIDO</span>{navItems.map(([label, href]) => <a href={href} key={href}>{label}</a>)}</div>
           <div><span>CONTACTO</span><a href={telephoneUrl}>{content.phoneNumber}</a><a href={quoteUrl} target="_blank" rel="noreferrer">WhatsApp directo</a><p>{content.location}</p></div>
         </div>
-        <div className="footer-bottom"><span>© {new Date().getFullYear()} FRANZ WIELER</span><span>CONSTRUCCIÓN DE TECHOS Y ESTRUCTURAS</span><a href="/admin" aria-label="Acceso para administrar el sitio">ACCESO CLIENTE</a></div>
+        <div className="footer-bottom"><span>© 2023 FRANZ WIELER</span><span>CONSTRUCCIÓN DE TECHOS Y ESTRUCTURAS</span><a href="/admin" aria-label="Acceso para administrar el sitio">ACCESO CLIENTE</a></div>
       </footer>
 
       <CatalogLink className="floating-catalog" href={catalogUrl} label="Abrir catálogo de WhatsApp de Faro Estructuras">

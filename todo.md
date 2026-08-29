@@ -84,3 +84,5 @@
 - [x] Replace the white loading gap with an explicit background-consistent pending state for managed public content.
 - [x] Verify the pending state and rendered loading experience on mobile and desktop.
 - [x] Add deterministic coverage that the public page renders its intended non-white surface while `site.public` is pending.
+- [x] Change the public footer copyright year to the requested 2023 value.
+- [x] Verify the footer year and publish the requested checkpoint.
