@@ -86,3 +86,10 @@
 - [x] Add deterministic coverage that the public page renders its intended non-white surface while `site.public` is pending.
 - [x] Change the public footer copyright year to the requested 2023 value.
 - [x] Verify the footer year and publish the requested checkpoint.
+- [x] Prepare a GitHub Pages-ready responsive starter site with complete code and deployment instructions.
+- [x] Validate the starter file links and deliver the copy-pasteable package.
+- [x] Confirm the existing GitHub repository remote and select a non-destructive folder for the Pages starter.
+- [x] Copy the GitHub Pages starter and deployment guide into the existing repository without overwriting the live application.
+- [x] Validate and push the dedicated GitHub Pages starter folder to the existing repository.
+- [x] Add a focused meta-keywords tag containing 3–8 relevant homepage keywords.
+- [x] Validate the exact keyword count and publish the SEO update.
